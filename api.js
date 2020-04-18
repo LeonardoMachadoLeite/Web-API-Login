@@ -1,26 +1,77 @@
-var http = require('http');
-var url = require('url');
-var fs = require('fs');
+var express = require("express")
+const bodyParser = require('body-parser');
+let jwt = require('jsonwebtoken');
+let config = require('./config');
+let middleware = require('./middleware');
 
-http.createServer(function (req, res) {
 
-  res.writeHead(200, {'Content-Type': 'text/html'});
-  var q = url.parse(req.url, true).query;
+class HandlerGenerator {
 
-  var filename = "." + q.pathname;
-  fs.readFile(filename, function(err, data) {
-     if (err) {
-        res.writeHead(404, {'Content-Type': 'text/html'});
-        return res.end("404 Not Found");
-      }
-      if (req["usuario"] == "aluno" && req["senha"] == "unit") {
-        return res.end("Login sucedido");
+  login (req, res) {
+    let username = req.body.username;
+    let password = rea.body.password;
+
+    let mockedUsername = 'aluno';
+    let mockedPassword = 'unit';
+
+    if (username && password) {
+
+      if (username === mockedUsername && password === mockedPassword) {
+        let token = jwt.sign(
+          {username:username},
+          config.secret,
+          {expiresIn:'1h'}
+        );
+        // return the JWT token for the future API calls
+        res.json({
+          success: true,
+          message: 'Autenticação sucedida!',
+          token:token
+        });
+
       } else {
-        return res.end("Login Inválido")
+        res.send(403).json({
+          success: false,
+          message: 'Incorreto nome de usuário ou senha'
+        });
+
       }
-      
-   });
 
-  res.end('Today\'s date and time is ' + dt.myDateTime());
+    } else {
+      res.send(400).json({
+        success: false,
+        message: 'Authentication failed! Please check the request'
+      });
+    }
 
-}).listen(8082);
+  }
+
+  index (req, res) {
+    res.json({
+      success: true,
+      message: 'Index page'
+    });
+  }
+
+}
+
+
+function main() {
+
+  var app = express();
+  let handlers = new HandlerGenerator();
+  const port = 8082;
+
+  app.use(bodyParser.urlencoded({ // Middleware
+    extended: true
+  }));
+  app.use(bodyParser.json());
+
+  // Routes & Handlers
+  app.post('/login', handlers.login);
+  app.get('/', middleware.checkToken, handlers.index);
+  app.listen(port, () => console.log('Server is listening on port: ' + port));
+
+}
+
+main()
