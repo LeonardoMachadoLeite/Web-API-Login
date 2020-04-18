@@ -9,7 +9,7 @@ class HandlerGenerator {
 
   login (req, res) {
     let username = req.body.username;
-    let password = rea.body.password;
+    let password = req.body.password;
 
     let mockedUsername = 'aluno';
     let mockedPassword = 'unit';
